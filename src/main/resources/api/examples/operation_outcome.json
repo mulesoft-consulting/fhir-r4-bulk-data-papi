@@ -1,0 +1,10 @@
+{
+  "resourceType" : "OperationOutcome",
+  "issue" : [{
+    "severity" : "information", 
+    "code" : "processing",
+    "details" : { 
+    	"text": "Request has been received" 
+    }
+  }]
+}

@@ -1,0 +1,6 @@
+mongodb:
+  database: "fhir-dev"
+anypoint:
+  autodiscovery: "16457610"
+  mq:
+    destination: "fhir-bulk-data-jobs"

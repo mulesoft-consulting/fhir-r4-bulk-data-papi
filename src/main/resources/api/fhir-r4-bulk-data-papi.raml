@@ -1,0 +1,45 @@
+#%RAML 1.0
+title: fhir-r4-bulk-data-papi
+version: v1
+description: FHIR R4 Bulk Data Job Engine
+baseUri: https://localhost:8082/api
+
+mediaType:
+  - application/fhir+xml
+  - application/fhir+json
+protocols:
+  - https
+  
+/job:
+  /{instanceId}:
+    get:
+      responses:
+        200:
+          headers:
+            Content-Type: 
+              type: string
+              default: "application/json"
+            Expires: 
+          body:
+            application/json:
+              example: !include /examples/get_response.json
+        202:
+          headers:
+            X-Progress:
+          body:
+            
+        500:
+          body:
+    delete:
+      responses:
+        202:
+          body:
+            application/json:
+              example: !include /examples/operation_outcome.json
+                
+        500:
+          body:
+            application/json:
+              example: !include /examples/operation_outcome.json       
+            
+        

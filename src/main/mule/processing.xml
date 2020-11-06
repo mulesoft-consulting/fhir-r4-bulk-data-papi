@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:anypoint-mq="http://www.mulesoft.org/schema/mule/anypoint-mq" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:mongo="http://www.mulesoft.org/schema/mule/mongo"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/mongo http://www.mulesoft.org/schema/mule/mongo/current/mule-mongo.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/anypoint-mq http://www.mulesoft.org/schema/mule/anypoint-mq/current/mule-anypoint-mq.xsd">
+	
+	<!-- 
+	<flow name="implementationFlow1" doc:id="28693cd1-0b49-476c-94e3-97cdf429252b" >
+		<anypoint-mq:subscriber doc:name="Subscriber" doc:id="a3944c8c-7e16-47dc-96c8-19f0d10bca4d" config-ref="Anypoint_MQ_Config" destination="${anypoint.mq.destination}" acknowledgementMode="MANUAL"/>
+		<logger level="INFO" doc:name="Logger" doc:id="639f4471-0816-4071-ae33-9c2246c2ddac" message="#[payload]"/>
+		<anypoint-mq:nack doc:name="Nack" doc:id="506c7502-3ae6-455b-b363-e753e5010b78" config-ref="Anypoint_MQ_Config" ackToken="#[attributes.ackToken]"/>
+	</flow>
+	 -->
+	 
+</mule>

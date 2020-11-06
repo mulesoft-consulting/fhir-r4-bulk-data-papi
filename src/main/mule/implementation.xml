@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:anypoint-mq="http://www.mulesoft.org/schema/mule/anypoint-mq" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:mongo="http://www.mulesoft.org/schema/mule/mongo"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/mongo http://www.mulesoft.org/schema/mule/mongo/current/mule-mongo.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/anypoint-mq http://www.mulesoft.org/schema/mule/anypoint-mq/current/mule-anypoint-mq.xsd">
+	<flow name="impl-get:\job\(instanceId):fhir-r4-bulk-data-papi-config" doc:id="05fcb15c-a7f3-479c-a28c-7b25f960fd4c" >
+	<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core">
+            <ee:variables>
+                <ee:set-variable variableName="instanceId">attributes.uriParams.'instanceId'</ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <logger level="INFO" message="get:\job\(instanceId):fhir-bulk-data-app-config" />
+        
+        <try doc:name="Try" doc:id="001e2619-31df-40d1-a9fc-fb13578ef2aa">
+			<mongo:find-documents doc:name="Find documents" doc:id="42290399-9e20-4ba9-8151-e547e44c93e4" config-ref="MongoDB_Config" collectionName="bulk-data-jobs" fields="instanceState,batchStatus,type">
+				<mongo:query ><![CDATA[#[output application/json
+---
+{ "instanceId": vars.instanceId }]]]></mongo:query>
+			</mongo:find-documents>
+			<error-handler>
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="3884a1ce-94f1-4700-84cf-be7176ffae8d">
+					<ee:transform doc:name="set OperationOutcome and 410 gone" doc:id="b6cb921a-8a3d-4ede-9d59-75a1a204a45a">
+						<ee:message>
+							<ee:set-payload><![CDATA[output application/json
+---
+{
+  "resourceType": "OperationOutcome",
+  "text": {
+    "status": "generated",
+    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><h1>Operation Outcome</h1><table border=\"0\"><tr><td style=\"font-weight: bold;\">ERROR</td><td>[]</td><td><pre>Resource was deleted at $(payload.happenedOn)</pre></td>\n\t\t\t\t\t\n\t\t\t\t\n\t\t\t</tr>\n\t\t</table>\n\t</div>"
+  },
+  "issue": [ {
+    "severity": "error",
+    "code": "processing",
+    "diagnostics": "Resource was deleted at $(payload.happenedOn)"
+  } ]
+}]]></ee:set-payload>
+						</ee:message>
+						<ee:variables>
+							<ee:set-variable variableName="httpStatus"><![CDATA[410]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+				</on-error-continue>
+			</error-handler>
+		</try>
+		<choice doc:name="Choice" doc:id="149623f4-a043-4d05-9c74-52c4b90c2652" >
+			<when expression="#[payload[0].instanceState == 'COMPLETE']">
+				<logger level="INFO" doc:name="Logger" doc:id="1fb6f051-5769-414a-bde8-ed577ea87a00" />
+				<ee:transform doc:name="Transform Message" doc:id="c85b7736-8ac6-436f-901b-5cce09f15003">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{  
+  "transactionTime" : "string",  
+  "request" : "string",  
+  "requiresAccessToken" : "boolean",
+  "output" :   [
+    {      
+      "type" : "string",      
+      "url" : "string"
+    }
+  ]
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Logger" doc:id="6ab2e2e0-06a5-40e9-acfd-c71474d5c050" message='"Processing"'/>
+				<set-variable value='#[vars.outboundHeaders default {} ++ { "X-Progress" : "Processing" }]' doc:name="Set Variable" doc:id="a7ced130-58af-4fff-9107-b4d33bc026f8" variableName="outboundHeaders"/>
+				<set-variable value="202" doc:name="Set Variable" doc:id="5c8f1562-28b4-4ac2-8c1a-c59c551cc972" variableName="httpStatus"/>
+				<ee:transform doc:name="Transform Message" doc:id="f559f260-0216-4050-a684-71af2f94a6c3">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  resourceType: "OperationOutcome",
+  issue: [
+    {
+      severity: "information",
+      code: "processing",
+      details: {
+        text: "Request has been received"
+      }
+    }
+  ]
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			</otherwise>
+		</choice>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="84ae0979-d132-4589-8912-5f7be8c80d12" type="ANY" >
+				<ee:transform doc:name="set 404 OperationOutcome + StatusCode" doc:id="92c309a8-1593-47ec-ba02-a7f27c2ecd85" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[output application/json
+---
+{
+  "resourceType": "OperationOutcome",
+  "text": {
+    "status": "generated",
+    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><h1>Operation Outcome</h1><table border=\"0\"><tr><td style=\"font-weight: bold;\">ERROR</td><td>[]</td><td><pre>Resource $(p('fhirResourceName'))/$(vars.resourceId) is not known</pre></td>\n\t\t\t\t\t\n\t\t\t\t\n\t\t\t</tr>\n\t\t</table>\n\t</div>"
+  },
+  "issue": [ {
+    "severity": "error",
+    "code": "processing",
+    "diagnostics": "Resource $(p('fhirResourceName'))/$(vars.resourceId) is not known"
+  } ]
+}]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+						<ee:set-variable variableName="httpStatus" ><![CDATA[404]]></ee:set-variable>
+					</ee:variables>
+				</ee:transform>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+	<flow name="impl-delete:\job\(instanceId):fhir-r4-bulk-data-papi-config" doc:id="09d02a73-8005-490b-ab07-85dcae7a89a1">
+		<logger level="INFO" doc:name="Logger" doc:id="10b6688a-c457-4624-b468-20844ac2e6f7" />
+		<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core">
+            <ee:variables>
+                <ee:set-variable variableName="instanceId">attributes.uriParams.'instanceId'</ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  resourceType: "OperationOutcome",
+  issue: [
+    {
+      severity: "information",
+      code: "processing",
+      details: {
+        text: "Request has been received"
+      }
+    }
+  ]
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+	</flow>
+</mule>
