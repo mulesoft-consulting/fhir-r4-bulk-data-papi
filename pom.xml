@@ -64,27 +64,21 @@
             <classifier>mule-plugin</classifier>
         </dependency>
     	<dependency>
-            <groupId>dffb45a2-a86e-4e2d-9541-f2b15cff324d</groupId>
-            <artifactId>mule-plugin-fhir-r4-us-core-patient</artifactId>
-            <version>1.0.0</version>
-            <classifier>mule-plugin</classifier>
-        </dependency>
-    	<dependency>
             <groupId>org.mule.connectors</groupId>
             <artifactId>mule-sockets-connector</artifactId>
             <version>1.1.5</version>
             <classifier>mule-plugin</classifier>
         </dependency>
     	<dependency>
-            <groupId>com.mulesoft.connectors</groupId>
-            <artifactId>mule-mongodb-connector</artifactId>
-            <version>6.3.0</version>
-            <classifier>mule-plugin</classifier>
-        </dependency>
-    	<dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongodb-driver-legacy</artifactId>
             <version>4.0.4</version>
+        </dependency>
+    	<dependency>
+            <groupId>com.mulesoft.connectors</groupId>
+            <artifactId>mule-mongodb-connector</artifactId>
+            <version>5.4.2</version>
+            <classifier>mule-plugin</classifier>
         </dependency>
     </dependencies>
 
