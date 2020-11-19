@@ -1,7 +1,7 @@
 mongodb:
   database: "fhir-dev"
 anypoint:
-  autodiscovery: "16457610"
+  autodiscovery: "16485168"
   mq:
     destination: "fhir-bulk-data-jobs"
 resourceTypes: "Patient,Organization,Encounters,Location,Practitioner,PractitionerRole"
