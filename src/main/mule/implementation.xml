@@ -1,21 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:anypoint-mq="http://www.mulesoft.org/schema/mule/anypoint-mq" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
-	xmlns:mongo="http://www.mulesoft.org/schema/mule/mongo"
-	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+<mule xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:anypoint-mq="http://www.mulesoft.org/schema/mule/anypoint-mq"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:mongo="http://www.mulesoft.org/schema/mule/mongo" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/mongo http://www.mulesoft.org/schema/mule/mongo/current/mule-mongo.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
-http://www.mulesoft.org/schema/mule/anypoint-mq http://www.mulesoft.org/schema/mule/anypoint-mq/current/mule-anypoint-mq.xsd">
+http://www.mulesoft.org/schema/mule/anypoint-mq http://www.mulesoft.org/schema/mule/anypoint-mq/current/mule-anypoint-mq.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
 	<flow name="impl-get:\job\(instanceId):fhir-r4-bulk-data-papi-config" doc:id="05fcb15c-a7f3-479c-a28c-7b25f960fd4c" >
-	<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core">
+	<logger level="INFO" message="get:\job\(instanceId):fhir-bulk-data-app-config" />
+		<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core">
             <ee:variables>
                 <ee:set-variable variableName="instanceId">attributes.uriParams.'instanceId'</ee:set-variable>
             </ee:variables>
         </ee:transform>
-        <logger level="INFO" message="get:\job\(instanceId):fhir-bulk-data-app-config" />
         
         <try doc:name="Try" doc:id="001e2619-31df-40d1-a9fc-fb13578ef2aa">
-			<mongo:find-documents doc:name="Find documents" doc:id="42290399-9e20-4ba9-8151-e547e44c93e4" config-ref="MongoDB_Config" collectionName="bulk-data-jobs" fields="instanceState,batchStatus,type">
+			<mongo:find-documents doc:name="Find documents" doc:id="42290399-9e20-4ba9-8151-e547e44c93e4" config-ref="MongoDB_Config" collectionName="bulk-data-jobs" fields=",">
 				<mongo:query ><![CDATA[#[output application/json
 ---
 { "instanceId": vars.instanceId }]]]></mongo:query>
@@ -48,30 +49,34 @@ http://www.mulesoft.org/schema/mule/anypoint-mq http://www.mulesoft.org/schema/m
 		</try>
 		<choice doc:name="Choice" doc:id="149623f4-a043-4d05-9c74-52c4b90c2652" >
 			<when expression="#[payload[0].instanceState == 'COMPLETE']">
-				<logger level="INFO" doc:name="Logger" doc:id="1fb6f051-5769-414a-bde8-ed577ea87a00" />
+				<set-variable value="#[payload[0].request]" doc:name="Set Variable" doc:id="c342fa57-782f-40ed-917c-c02d498960ab" variableName="request"/>
+				<file:list doc:name="List" doc:id="9ee5f997-34d9-4463-b5ae-826983264c09" directoryPath='#["${mule.home}/apps/${app.name}/" ++ vars.instanceId]'/>
+				<logger level="INFO" doc:name="Logger" doc:id="ed931498-603a-4d9f-a7be-6bea1c45d975" />
 				<ee:transform doc:name="Transform Message" doc:id="c85b7736-8ac6-436f-901b-5cce09f15003">
 			<ee:message>
 				<ee:set-payload><![CDATA[%dw 2.0
+import * from dw::core::Strings
 output application/json
 ---
 {  
-  "transactionTime" : "string",  
-  "request" : "string",  
-  "requiresAccessToken" : "boolean",
+  "transactionTime" : (now() >> "UTC"),  
+  "request" : vars.request,  
+  "requiresAccessToken" : false,
   "output" :   [
-    {      
-      "type" : "string",      
-      "url" : "string"
-    }
+    payload map (item, index) -> {
+		"type": capitalize(substringBefore(item.attributes.name,"_")),
+		"url": p('baseUrl') ++ "/api/" ++ vars.instanceId ++ "/" ++ item.attributes.name
+	}
   ]
-}]]></ee:set-payload>
+}
+
+]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
 			</when>
 			<otherwise >
-				<logger level="INFO" doc:name="Logger" doc:id="6ab2e2e0-06a5-40e9-acfd-c71474d5c050" message='"Processing"'/>
-				<set-variable value='#[vars.outboundHeaders default {} ++ { "X-Progress" : "Processing" }]' doc:name="Set Variable" doc:id="a7ced130-58af-4fff-9107-b4d33bc026f8" variableName="outboundHeaders"/>
-				<set-variable value="202" doc:name="Set Variable" doc:id="5c8f1562-28b4-4ac2-8c1a-c59c551cc972" variableName="httpStatus"/>
+				<set-variable value='#[vars.outboundHeaders default {} ++ { "X-Progress" : "Processing" }]' doc:name="X-Progress" doc:id="a7ced130-58af-4fff-9107-b4d33bc026f8" variableName="outboundHeaders"/>
+				<set-variable value="202" doc:name="httpStatus - 202" doc:id="5c8f1562-28b4-4ac2-8c1a-c59c551cc972" variableName="httpStatus"/>
 				<ee:transform doc:name="Transform Message" doc:id="f559f260-0216-4050-a684-71af2f94a6c3">
 			<ee:message>
 				<ee:set-payload><![CDATA[%dw 2.0
@@ -84,7 +89,7 @@ output application/json
       severity: "information",
       code: "processing",
       details: {
-        text: "Request has been received"
+        text: "Request is still being processed"
       }
     }
   ]
@@ -120,7 +125,6 @@ output application/json
 		</error-handler>
 	</flow>
 	<flow name="impl-delete:\job\(instanceId):fhir-r4-bulk-data-papi-config" doc:id="09d02a73-8005-490b-ab07-85dcae7a89a1">
-		<logger level="INFO" doc:name="Logger" doc:id="10b6688a-c457-4624-b468-20844ac2e6f7" />
 		<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core">
             <ee:variables>
                 <ee:set-variable variableName="instanceId">attributes.uriParams.'instanceId'</ee:set-variable>
@@ -145,5 +149,15 @@ output application/json
 }]]></ee:set-payload>
             </ee:message>
         </ee:transform>
+	</flow>
+	<flow name="impl-get:\(instanceId)\(fileName):fhir-r4-bulk-data-papi-config" doc:id="4d460da9-bc87-4f5f-a37d-b6aeac102ee8">
+	<logger level="INFO" message="get:\(instanceId)\(fileName):fhir-r4-bulk-data-papi-config" />
+		<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core">
+            <ee:variables>
+                <ee:set-variable variableName="instanceId"><![CDATA[attributes.uriParams.'instanceId' default ""]]></ee:set-variable>
+                <ee:set-variable variableName="fileName"><![CDATA[attributes.uriParams.'fileName' default ""]]></ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+		<file:read doc:name="Read" doc:id="586fd440-026c-487e-b554-df630954e026" path='#["${mule.home}/apps/${app.name}/" ++ vars.instanceId ++ "/" ++ vars.fileName]' outputMimeType="application/json"/>
 	</flow>
 </mule>

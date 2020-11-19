@@ -9,37 +9,47 @@ mediaType:
   - application/fhir+json
 protocols:
   - https
-  
-/job:
-  /{instanceId}:
-    get:
-      responses:
-        200:
-          headers:
-            Content-Type: 
-              type: string
-              default: "application/json"
-            Expires: 
-          body:
-            application/json:
-              example: !include /examples/get_response.json
-        202:
-          headers:
-            X-Progress:
-          body:
-            
-        500:
-          body:
-    delete:
-      responses:
-        202:
-          body:
-            application/json:
-              example: !include /examples/operation_outcome.json
-                
-        500:
-          body:
-            application/json:
-              example: !include /examples/operation_outcome.json       
+
+/{instanceId}/{fileName}:
+  get:
+    responses:
+      200:
+        headers:
+          Accept: 
+            type: string
+            default: "application/json"
+        body:
+        
+       
+/job/{instanceId}:
+  get:
+    responses:
+      200:
+        headers:
+          Content-Type: 
+            type: string
+            default: "application/json"
+          Expires: 
+        body:
+          application/json:
+            example: !include /examples/get_response.json
+      202:
+        headers:
+          X-Progress:
+        body:
+          
+      500:
+        body:
+  delete:
+    responses:
+      202:
+        body:
+          application/json:
+            example: !include /examples/operation_outcome.json
+              
+      500:
+        body:
+          application/json:
+            example: !include /examples/operation_outcome.json       
             
         

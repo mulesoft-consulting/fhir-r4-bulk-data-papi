@@ -1,18 +1,72 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:anypoint-mq="http://www.mulesoft.org/schema/mule/anypoint-mq" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
-	xmlns:mongo="http://www.mulesoft.org/schema/mule/mongo"
-	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+<mule xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:anypoint-mq="http://www.mulesoft.org/schema/mule/anypoint-mq"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:mongo="http://www.mulesoft.org/schema/mule/mongo" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/mongo http://www.mulesoft.org/schema/mule/mongo/current/mule-mongo.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
-http://www.mulesoft.org/schema/mule/anypoint-mq http://www.mulesoft.org/schema/mule/anypoint-mq/current/mule-anypoint-mq.xsd">
+http://www.mulesoft.org/schema/mule/anypoint-mq http://www.mulesoft.org/schema/mule/anypoint-mq/current/mule-anypoint-mq.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
 	
-	<!-- 
+	
 	<flow name="implementationFlow1" doc:id="28693cd1-0b49-476c-94e3-97cdf429252b" >
-		<anypoint-mq:subscriber doc:name="Subscriber" doc:id="a3944c8c-7e16-47dc-96c8-19f0d10bca4d" config-ref="Anypoint_MQ_Config" destination="${anypoint.mq.destination}" acknowledgementMode="MANUAL"/>
-		<logger level="INFO" doc:name="Logger" doc:id="639f4471-0816-4071-ae33-9c2246c2ddac" message="#[payload]"/>
-		<anypoint-mq:nack doc:name="Nack" doc:id="506c7502-3ae6-455b-b363-e753e5010b78" config-ref="Anypoint_MQ_Config" ackToken="#[attributes.ackToken]"/>
+		<anypoint-mq:subscriber doc:name="Subscriber" doc:id="a3944c8c-7e16-47dc-96c8-19f0d10bca4d" config-ref="Anypoint_MQ_Config" destination="${anypoint.mq.destination}"/>
+		<set-variable value="#[payload.instanceId]" doc:name="instanceId" doc:id="e743f8b2-8575-475b-ace6-aa50ca7aa98f" variableName="instanceId"/>
+		<mongo:update-documents collectionName="bulk-data-jobs" doc:name="Update - Update - bulk-data-jobs" doc:id="bca94065-a80a-42d4-9d08-3bf715c85878" config-ref="MongoDB_Config" target="updateStatus">
+			<mongo:query ><![CDATA[#[output application/json
+---
+{ "instanceId": vars.instanceId }]]]></mongo:query>
+			<mongo:content-to-update ><![CDATA[#[output application/json
+---
+{
+	"instanceState": "PROCESSING",
+	"batchStatus": "IN PROGRESS"
+}]]]></mongo:content-to-update>
+		</mongo:update-documents>
+		<choice doc:name="Choice" doc:id="5325b2af-be2b-4f8b-803f-a64c64940036" >
+			<when expression="#[payload.'type' == null]">
+				<set-payload value="#[p('resourceTypes') splitBy(&quot;,&quot;)]" doc:name="All Resources" doc:id="84991bd2-fbb4-4a8e-b14a-86ea2b3247a1" />
+			</when>
+			<otherwise >
+				<set-payload value="#[payload.'type' splitBy(&quot;,&quot;)]" doc:name="Select Resources" doc:id="0cdc5197-b81d-4994-aff6-55b990f6ff63" />
+			</otherwise>
+		</choice>
+		<foreach doc:name="For Each" doc:id="5c537b3a-58a7-43b3-892f-0363faf1d772" >
+		<set-variable value="#[lower(payload)]" doc:name="resourceType" doc:id="4a69ff4e-1a11-4995-b6d5-c695fd3cf642" variableName="resourceType"/>
+			<choice doc:name="Choice" doc:id="a47c9a9a-d67f-4b3c-ae2c-f3f2a5b02420" >
+				<when expression="#[vars.resourceType == 'patient']">
+					<set-variable value='#["us-core-patients"]' doc:name="Collection Name - us-core-patients" doc:id="cd83e02b-5b7d-47e8-9cfa-727152afddc5" variableName="collectionName"/>
+				</when>
+				<otherwise >
+					<set-variable value="#[vars.resourceType]" doc:name="Collection Name" doc:id="7de3547f-5d12-421f-854f-d44af05d65f8" variableName="collectionName"/>
+				</otherwise>
+			</choice>
+			<mongo:find-documents doc:name="Find documents" doc:id="5da1e3bf-0a9d-4f3f-9b7f-b33eca895780" config-ref="MongoDB_Config" collectionName="#[vars.collectionName]" fields=",">
+			<mongo:query><![CDATA[#[output application/json
+---
+{
+	({})
+}]]]></mongo:query>
+				
+		</mongo:find-documents>
+			<foreach doc:name="For Each" doc:id="c658f3f9-2f3e-4a25-9a10-f15d379c6858" >
+				<file:write doc:name="Write" doc:id="fc6a0d8a-34a7-41f4-8b4e-17133f5eced9" path='#["${mule.home}/apps/${app.name}/" ++ vars.instanceId ++ "/" ++ vars.resourceType ++ "_file.ndjson"]' mode="APPEND"/>
+			</foreach>
+			
+		</foreach>
+		<mongo:update-documents collectionName="bulk-data-jobs" doc:name="Update - bulk-data-jobs" doc:id="fa94e423-f264-47d5-8ccf-ecdd8e12fdea" config-ref="MongoDB_Config">
+			<mongo:query ><![CDATA[#[output application/json
+---
+{ "instanceId": vars.instanceId }]]]></mongo:query>
+			<mongo:content-to-update ><![CDATA[#[output application/json
+---
+{
+	"instanceState": "COMPLETE",
+	"batchStatus": "COMPLETE"
+}]]]></mongo:content-to-update>
+		</mongo:update-documents>
 	</flow>
-	 -->
+	
 	 
 </mule>
