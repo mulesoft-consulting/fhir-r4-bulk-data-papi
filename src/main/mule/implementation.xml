@@ -17,10 +17,10 @@ http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/fil
         
         <try doc:name="Try" doc:id="001e2619-31df-40d1-a9fc-fb13578ef2aa">
 			<mongo:find-documents doc:name="Find documents" doc:id="42290399-9e20-4ba9-8151-e547e44c93e4" config-ref="MongoDB_Config" collectionName="bulk-data-jobs" fields=",">
-				<mongo:query ><![CDATA[#[output application/json
+				<mongo:query><![CDATA[#[output application/json
 ---
-{ "instanceId": vars.instanceId }]]]></mongo:find-query>
-			</mongo:find-one-document>
+{ "instanceId": vars.instanceId }]]]></mongo:query>
+			</mongo:find-documents>
 			<error-handler>
 				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="3884a1ce-94f1-4700-84cf-be7176ffae8d">
 					<ee:transform doc:name="set OperationOutcome and 410 gone" doc:id="b6cb921a-8a3d-4ede-9d59-75a1a204a45a">
