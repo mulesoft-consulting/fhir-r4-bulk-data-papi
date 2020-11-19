@@ -169,15 +169,15 @@ output application/json
 			<otherwise>
 				<choice doc:name="Choice" doc:id="d31ee0b6-cd94-4291-be1e-138bef3bdc19" >
 					<when expression="#[payload[0].batchStatus != null]">
-						<logger level="INFO" doc:name="Logger" doc:id="a865801e-2311-4c68-941a-5308f8fe27f3" />
-					</when>
-					<otherwise >
 						<file:delete doc:name="Delete Folder" doc:id="c0e14621-9394-4ccf-b3a9-1a0bde01a440" path='#["${mule.home}/apps/${app.name}/" ++ vars.instanceId]' />
 						<mongo:remove-documents collectionName="bulk-data-jobs" doc:name="Remove documents" doc:id="ffb2c062-bbcd-4c84-935f-a8f21799f103" config-ref="MongoDB_Config">
-							<mongo:query ><![CDATA[#[output application/json
+							<mongo:query><![CDATA[#[output application/json
 ---
 { "instanceId": vars.instanceId }]]]></mongo:query>
 						</mongo:remove-documents>
+					</when>
+					<otherwise>
+						<logger level="INFO" doc:name="Logger" doc:id="a865801e-2311-4c68-941a-5308f8fe27f3" />
 					</otherwise>
 				</choice>
 			</otherwise>
