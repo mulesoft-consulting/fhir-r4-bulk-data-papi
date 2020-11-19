@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd ">
     <http:listener-config name="fhir-r4-bulk-data-papi-httpListenerConfig">
-        <http:listener-connection host="0.0.0.0" port="8082" />
+        <http:listener-connection host="0.0.0.0" port="8081" />
     </http:listener-config>
-    <apikit:config name="fhir-r4-bulk-data-papi-config" api="fhir-r4-bulk-data-papi.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <apikit:config name="fhir-r4-bulk-data-papi-config" api="resource::dffb45a2-a86e-4e2d-9541-f2b15cff324d:fhir-r4-bulk-data-papi:1.0.1:raml:zip:fhir-r4-bulk-data-papi.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
     <flow name="fhir-r4-bulk-data-papi-main">
         <http:listener config-ref="fhir-r4-bulk-data-papi-httpListenerConfig" path="/api/*">
             <http:response statusCode="#[vars.httpStatus default 200]">
@@ -130,7 +130,6 @@ output application/json
         <flow-ref doc:name="Flow Reference" doc:id="08f7b6b3-0b42-403a-b328-51dd663e3b77" name="impl-get:\job\(instanceId):fhir-r4-bulk-data-papi-config" />
     </flow>
     <flow name="get:\(instanceId)\(fileName):fhir-r4-bulk-data-papi-config">
-		<flow-ref doc:name="Flow Reference" doc:id="e99dccca-38de-40eb-ba6c-786d48060ed4" name="impl-get:\(instanceId)\(fileName):fhir-r4-bulk-data-papi-config"/>
-        
+        <flow-ref doc:name="Flow Reference" doc:id="e99dccca-38de-40eb-ba6c-786d48060ed4" name="impl-get:\(instanceId)\(fileName):fhir-r4-bulk-data-papi-config" />
     </flow>
 </mule>

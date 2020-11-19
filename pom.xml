@@ -86,6 +86,13 @@
             <version>1.2.0</version>
             <classifier>mule-plugin</classifier>
         </dependency>
+    	<dependency>
+            <groupId>dffb45a2-a86e-4e2d-9541-f2b15cff324d</groupId>
+            <artifactId>fhir-r4-bulk-data-papi</artifactId>
+            <version>1.0.1</version>
+            <classifier>raml</classifier>
+            <type>zip</type>
+        </dependency>
     </dependencies>
 
 </project>

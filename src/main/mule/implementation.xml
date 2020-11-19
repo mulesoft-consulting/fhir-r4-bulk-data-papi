@@ -130,7 +130,59 @@ output application/json
                 <ee:set-variable variableName="instanceId">attributes.uriParams.'instanceId'</ee:set-variable>
             </ee:variables>
         </ee:transform>
-        <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+        <try doc:name="Try" doc:id="504ba6b0-0946-4a35-80d3-363dc09aaece">
+			<mongo:find-documents doc:name="Find documents" doc:id="29666ea0-7f24-4205-9494-0caa8e1c4d62" config-ref="MongoDB_Config" collectionName="bulk-data-jobs" fields=",">
+				<mongo:query><![CDATA[#[output application/json
+---
+{ "instanceId": vars.instanceId }]]]></mongo:query>
+			</mongo:find-documents>
+			<error-handler>
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="536df5b6-9f33-4969-9ac8-739e6d319a4d">
+					<ee:transform doc:name="set OperationOutcome and 410 gone" doc:id="287fbcef-7832-4fa1-885c-147857c33457">
+						<ee:message>
+							<ee:set-payload><![CDATA[output application/json
+---
+{
+  "resourceType": "OperationOutcome",
+  "text": {
+    "status": "generated",
+    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><h1>Operation Outcome</h1><table border=\"0\"><tr><td style=\"font-weight: bold;\">ERROR</td><td>[]</td><td><pre>Resource was deleted</pre></td>\n\t\t\t\t\t\n\t\t\t\t\n\t\t\t</tr>\n\t\t</table>\n\t</div>"
+  },
+  "issue": [ {
+    "severity": "error",
+    "code": "processing",
+    "diagnostics": "Resource was deleted"
+  } ]
+}]]></ee:set-payload>
+						</ee:message>
+						<ee:variables>
+							<ee:set-variable variableName="httpStatus"><![CDATA[410]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+				</on-error-continue>
+			</error-handler>
+		</try>
+		<choice doc:name="Choice" doc:id="dddf4859-40bb-4d18-9630-2cfeb798c64b" >
+			<when expression="#[sizeOf(payload) == 0]">
+				<logger level="INFO" doc:name="Logger" doc:id="fa5cb927-0051-4b00-b224-accb7a5eebde" />
+			</when>
+			<otherwise>
+				<choice doc:name="Choice" doc:id="d31ee0b6-cd94-4291-be1e-138bef3bdc19" >
+					<when expression="#[payload[0].batchStatus != null]">
+						<logger level="INFO" doc:name="Logger" doc:id="a865801e-2311-4c68-941a-5308f8fe27f3" />
+					</when>
+					<otherwise >
+						<file:delete doc:name="Delete Folder" doc:id="c0e14621-9394-4ccf-b3a9-1a0bde01a440" path='#["${mule.home}/apps/${app.name}/" ++ vars.instanceId]' />
+						<mongo:remove-documents collectionName="bulk-data-jobs" doc:name="Remove documents" doc:id="ffb2c062-bbcd-4c84-935f-a8f21799f103" config-ref="MongoDB_Config">
+							<mongo:query ><![CDATA[#[output application/json
+---
+{ "instanceId": vars.instanceId }]]]></mongo:query>
+						</mongo:remove-documents>
+					</otherwise>
+				</choice>
+			</otherwise>
+		</choice>
+		<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
             <ee:message>
                 <ee:set-payload><![CDATA[%dw 2.0
 output application/json
